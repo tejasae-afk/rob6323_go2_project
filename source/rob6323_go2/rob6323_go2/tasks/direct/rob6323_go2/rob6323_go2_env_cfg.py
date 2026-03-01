@@ -16,6 +16,7 @@ from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sensors import ContactSensorCfg
 from isaaclab.markers import VisualizationMarkersCfg
 from isaaclab.markers.config import BLUE_ARROW_X_MARKER_CFG, FRAME_MARKER_CFG, GREEN_ARROW_X_MARKER_CFG
+from isaaclab.actuators import ImplicitActuatorCfg
 
 @configclass
 class Rob6323Go2EnvCfg(DirectRLEnvCfg):
@@ -79,3 +80,54 @@ class Rob6323Go2EnvCfg(DirectRLEnvCfg):
     # reward scales
     lin_vel_reward_scale = 1.0
     yaw_rate_reward_scale = 0.5
+    action_rate_reward_scale = -0.1 # Added As per 1.1
+
+    
+    # Added As per 2.1
+    # PD control gains
+    Kp = 20.0  # Proportional gain
+    Kd = 0.5   # Derivative gain
+    torque_limits = 100.0  # Max torque
+
+    # Update robot_cfg
+    robot_cfg: ArticulationCfg = UNITREE_GO2_CFG.replace(prim_path="/World/envs/env_.*/Robot")
+    # "base_legs" is an arbitrary key we use to group these actuators
+    robot_cfg.actuators["base_legs"] = ImplicitActuatorCfg(
+        joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+        effort_limit=23.5,
+        velocity_limit=30.0,
+        stiffness=0.0,  # CRITICAL: Set to 0 to disable implicit P-gain
+        damping=0.0,    # CRITICAL: Set to 0 to disable implicit D-gain
+    )
+
+    # Added As per 3.1
+    base_height_min = 0.20  # Terminate if base is lower than 20cm
+
+    # Added As per 4.1
+    observation_space = 48 + 4  # Added 4 for clock inputs
+    raibert_heuristic_reward_scale = -10.0
+    feet_clearance_reward_scale = -30.0
+    tracking_contacts_shaped_force_reward_scale = 4.0
+
+    # Added As per 5.1
+    # Additional reward scales
+    orient_reward_scale = -5.0
+    lin_vel_z_reward_scale = -0.02
+    dof_vel_reward_scale = -0.0001
+    ang_vel_xy_reward_scale = -0.001
+
+    # Torque smoothness (must be very small magnitude)
+    torque_reward_scale = -1e-4
+
+    # Added As per 6.1
+    feet_clearance_reward_scale = -30.0
+    tracking_contacts_shaped_force_reward_scale = 4.0
+    target_foot_clearance = 0.08
+    contact_force_norm_scale = 50.0
+
+    # Bonus Attempt
+    enable_friction_model = True
+    mu_v_min = 0.0
+    mu_v_max = 0.3
+    Fs_min = 0.0
+    Fs_max = 2.5
